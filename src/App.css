@@ -1,0 +1,617 @@
+/* App container layout */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  padding: 24px 20px;
+  position: relative;
+  background-color: #ffffff;
+}
+
+/* Close button header */
+.header-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  height: 40px;
+  margin-bottom: 24px;
+}
+
+.close-button {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  color: var(--toss-text-secondary);
+  font-size: 20px;
+  font-weight: 300;
+  transition: background-color 0.2s;
+}
+
+.close-button:active {
+  background-color: var(--toss-gray-background);
+}
+
+/* Main title styling */
+.main-title {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--toss-text-primary);
+  margin: 0 0 40px 0;
+  text-align: left;
+}
+
+/* Screen wrapper */
+.screen-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Card Selection list */
+.mode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex-grow: 1;
+}
+
+.mode-card {
+  width: 100%;
+  padding: 24px;
+  border-radius: 18px;
+  background-color: var(--toss-gray-card);
+  border: 1px solid var(--toss-border);
+  text-align: left;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mode-card:active {
+  transform: scale(0.98);
+  border-color: var(--toss-blue);
+  box-shadow: 0 4px 12px rgba(49, 130, 246, 0.08);
+}
+
+.mode-card-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--toss-text-primary);
+}
+
+.mode-card-score {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--toss-blue);
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background-color: var(--toss-gray-card);
+  margin-bottom: 16px;
+}
+
+.timer-bar-container {
+  width: 100%;
+  height: 6px;
+  background-color: var(--toss-gray-background);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.timer-bar {
+  height: 100%;
+  background-color: var(--toss-blue);
+  border-radius: 3px;
+  transition: width 1s linear;
+}
+
+.game-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.game-header-label {
+  font-size: 12px;
+  color: var(--toss-text-muted);
+  font-weight: 500;
+}
+
+.game-header-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--toss-text-primary);
+}
+
+.game-mode-tag {
+  background-color: rgba(49, 130, 246, 0.1);
+  color: var(--toss-blue);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Problem Area */
+.problem-container {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 24px;
+  background-color: var(--toss-gray-card);
+  border: 1px dashed var(--toss-border);
+  margin-bottom: 32px;
+  padding: 40px 20px;
+}
+
+.problem-text {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--toss-text-secondary);
+}
+
+/* Choice Buttons list */
+.choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.choice-button {
+  width: 100%;
+  padding: 18px;
+  border-radius: 14px;
+  background-color: var(--toss-gray-card);
+  border: 1px solid var(--toss-border);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--toss-text-secondary);
+  text-align: center;
+  transition: all 0.15s ease-in-out;
+}
+
+.choice-button:active {
+  transform: scale(0.99);
+  background-color: var(--toss-gray-background);
+  color: var(--toss-text-primary);
+}
+
+.choice-button.correct {
+  background-color: #e8f5e9 !important;
+  border-color: #2e7d32 !important;
+  color: #2e7d32 !important;
+}
+
+.choice-button.incorrect {
+  background-color: #ffebee !important;
+  border-color: #c62828 !important;
+  color: #c62828 !important;
+}
+
+.choice-button:disabled {
+  pointer-events: none;
+}
+
+/* End Game (Temporary dev action) */
+.dev-action-bar {
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.end-game-btn {
+  font-size: 14px;
+  color: var(--toss-text-muted);
+  text-decoration: underline;
+  padding: 8px 16px;
+}
+
+/* Result Screen Layout */
+.result-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.result-icon {
+  font-size: 64px;
+  margin-bottom: 24px;
+  animation: bounce 1s infinite alternate;
+}
+
+@keyframes bounce {
+  from { transform: translateY(0); }
+  to { transform: translateY(-10px); }
+}
+
+.result-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--toss-text-primary);
+  margin-bottom: 12px;
+}
+
+.result-score-box {
+  background-color: var(--toss-gray-card);
+  padding: 24px 40px;
+  border-radius: 20px;
+  border: 1px solid var(--toss-border);
+  margin-bottom: 40px;
+  position: relative;
+}
+
+.new-record-badge {
+  display: inline-block;
+  background-color: rgba(49, 130, 246, 0.1);
+  color: var(--toss-blue);
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 12px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.result-score-label {
+  font-size: 14px;
+  color: var(--toss-text-secondary);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.result-score-value {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--toss-blue);
+}
+
+/* Bottom Actions (Fixed at bottom of screen) */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-top: auto;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  background-color: var(--toss-blue);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-primary:active {
+  background-color: var(--toss-blue-hover);
+  transform: scale(0.99);
+}
+
+.btn-secondary {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  background-color: var(--toss-gray-background);
+  color: var(--toss-text-secondary);
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-secondary:active {
+  background-color: var(--toss-border);
+  transform: scale(0.99);
+}
+
+/* Sound Toggle Button */
+.sound-toggle-btn {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--toss-text-secondary);
+  padding: 6px 12px;
+  border-radius: 12px;
+  background-color: var(--toss-gray-background);
+  transition: all 0.2s;
+}
+
+.sound-toggle-btn:active {
+  background-color: var(--toss-border);
+}
+
+/* Modal Styling */
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeInModal 0.2s ease-out;
+}
+
+@keyframes fadeInModal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-container {
+  background-color: #ffffff;
+  width: 85%;
+  max-width: 320px;
+  padding: 24px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  animation: scaleUp 0.2s ease-out;
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--toss-text-primary);
+  margin-bottom: 24px;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-modal-cancel {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  background-color: var(--toss-gray-background);
+  color: var(--toss-text-secondary);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.btn-modal-cancel:active {
+  background-color: var(--toss-border);
+}
+
+.btn-modal-confirm {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  background-color: var(--toss-blue);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.btn-modal-confirm:active {
+  background-color: var(--toss-blue-hover);
+}
+
+/* Banner Ad Container */
+.banner-ad-container {
+  width: 100%;
+  height: 96px;
+  min-height: 96px;
+  background-color: var(--toss-gray-card);
+  border-top: 1px solid var(--toss-border);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;
+  z-index: 10;
+  font-size: 13px;
+  color: var(--toss-text-muted);
+}
+
+/* Rewarded continue button */
+.btn-rewarded {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  background-color: rgba(49, 130, 246, 0.1);
+  color: var(--toss-blue);
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.2s;
+  border: 1px solid rgba(49, 130, 246, 0.2);
+}
+
+.btn-rewarded:active:not(:disabled) {
+  background-color: rgba(49, 130, 246, 0.18);
+  transform: scale(0.99);
+}
+
+.btn-rewarded:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--toss-gray-background);
+  color: var(--toss-text-muted);
+  border-color: var(--toss-border);
+}
+
+/* info button */
+.info-button {
+  background-color: var(--toss-gray-background);
+  color: var(--toss-text-secondary);
+  border: none;
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.info-button:active {
+  background-color: var(--toss-border);
+}
+
+/* GRAC Rating UI */
+.grac-start-badge-wrapper {
+  margin: 12px 0 24px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.grac-rating-badge-container {
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grac-rating-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Green theme GRAC fallback (All-ages green: #00A862) */
+.grac-rating-fallback {
+  width: 52px;
+  height: 52px;
+  background-color: #00A862;
+  border-radius: 12px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 4px 6px rgba(0, 168, 98, 0.15);
+}
+
+.grac-fallback-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+}
+
+.grac-fallback-age {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.grac-fallback-label {
+  font-size: 9px;
+  font-weight: 500;
+  margin-top: 1px;
+}
+
+/* Game Info / Rating Info Layout */
+.grac-info-container {
+  text-align: left;
+}
+
+.grac-info-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--toss-border);
+}
+
+.grac-info-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grac-title-text {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--toss-text-primary);
+  margin: 0;
+}
+
+.grac-badge-inline {
+  background-color: rgba(0, 168, 98, 0.1);
+  color: #00A862;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  align-self: flex-start;
+}
+
+/* Table Style (Green theme SC-OM-*) */
+.grac-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.grac-info-table th {
+  width: 35%;
+  text-align: left;
+  padding: 10px 12px;
+  background-color: rgba(0, 168, 98, 0.05);
+  color: #00A862;
+  font-weight: 600;
+  border: 1px solid rgba(0, 168, 98, 0.15);
+}
+
+.grac-info-table td {
+  padding: 10px 12px;
+  color: var(--toss-text-secondary);
+  border: 1px solid rgba(0, 168, 98, 0.15);
+  font-weight: 500;
+}
