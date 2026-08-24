@@ -728,6 +728,12 @@ function App() {
             <GameRatingInfo onlyBadge={true} />
           </div>
 
+          {/* 오락실 타이틀 데코레이션 */}
+          <div className="arcade-deco-container">
+            <div className="insert-coin-text">INSERT COIN (1 CREDIT)</div>
+            <div className="arcade-joystick-deco">🕹️ 🔴 🟡</div>
+          </div>
+
           <div className="mode-list">
             <button
               className="mode-card card-quiz"
