@@ -688,7 +688,7 @@ function App() {
 
   return (
     <div
-      className="app-container"
+      className={`app-container theme-${mode || 'default'}`}
       style={{
         paddingTop: `${Math.max(safeArea.top, 24)}px`,
         paddingBottom: `${Math.max(safeArea.bottom, 24)}px`,
@@ -730,7 +730,7 @@ function App() {
 
           <div className="mode-list">
             <button
-              className="mode-card"
+              className="mode-card card-quiz"
               onClick={() => startNewGame('quiz')}
               disabled={isLoading}
               style={{ opacity: isLoading ? 0.6 : 1 }}
@@ -741,7 +741,7 @@ function App() {
               </span>
             </button>
 
-            <button className="mode-card" onClick={() => startNewGame('math')}>
+            <button className="mode-card card-math" onClick={() => startNewGame('math')}>
               <span className="mode-card-title">⚡ 빠른 계산</span>
               <span className="mode-card-score">
                 최고 점수: {highScoreMath}
