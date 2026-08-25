@@ -999,7 +999,7 @@ function App() {
                 </div>
               ) : (
                 <img
-                  src={`./${geoSessionQuestions[geoCurrentIndex].image}`}
+                  src={`./images/${geoSessionQuestions[geoCurrentIndex].id}.webp`}
                   alt="지리 추론 퀴즈"
                   className="geo-quiz-image"
                   onError={() => setImgError(true)}
