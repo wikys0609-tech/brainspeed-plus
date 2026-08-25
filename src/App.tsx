@@ -5,7 +5,7 @@ import './App.css';
 import GameRatingInfo from './components/GameRatingInfo';
 
 type ScreenState = 'select' | 'playing' | 'result';
-type GameMode = 'quiz' | 'math';
+type GameMode = 'quiz' | 'math' | 'geo';
 
 interface QuizItem {
   question: string;
@@ -18,6 +18,20 @@ interface QuizItem {
   difficulty: string;
 }
 
+interface GeoQuestion {
+  id: string;
+  category: string;
+  answer_ko: string;
+  answer_en: string;
+  acceptable_answers: string;
+  difficulty: string;
+  image: string;
+  hint_1: string;
+  hint_2: string;
+  hint_3: string;
+  explanation: string;
+}
+
 interface MathProblem {
   question: string;
   answer: number;
@@ -26,6 +40,13 @@ interface MathProblem {
 // TODO: 출시 전 콘솔에서 발급한 실제 광고 ID로 교체
 const AD_ID_BANNER = 'ait-ad-test-banner-id';
 const AD_ID_REWARDED = 'ait-ad-test-rewarded-id';
+
+// 지리 추론 힌트 사용량 기반 점수 배점 상수
+const GEO_SCORE_HINT_0 = 100;
+const GEO_SCORE_HINT_1 = 70;
+const GEO_SCORE_HINT_2 = 40;
+const GEO_SCORE_HINT_3 = 20;
+const GEO_SCORE_WRONG = 0;
 
 // 피셔-예이츠(Fisher-Yates) 셔플 알고리즘
 function shuffleArray<T>(array: T[]): T[] {
@@ -164,6 +185,17 @@ function App() {
   
   // 빠른 계산 전용 상태
   const [currentMathProblem, setCurrentMathProblem] = useState<MathProblem | null>(null);
+
+  // 지리 추론 전용 상태
+  const [geoQuestions, setGeoQuestions] = useState<GeoQuestion[]>([]);
+  const [geoSessionQuestions, setGeoSessionQuestions] = useState<GeoQuestion[]>([]);
+  const [geoCurrentIndex, setGeoCurrentIndex] = useState<number>(0);
+  const [openedHintsCount, setOpenedHintsCount] = useState<number>(0);
+  const [geoInput, setGeoInput] = useState<string>('');
+  const [isCorrectGeo, setIsCorrectGeo] = useState<boolean>(false);
+  const [showExplanation, setShowExplanation] = useState<boolean>(false);
+  const [highScoreGeo, setHighScoreGeo] = useState<number>(0);
+  const [imgError, setImgError] = useState<boolean>(false);
 
   // 공유되는 선택지 상태
   const [shuffledChoices, setShuffledChoices] = useState<string[]>([]);
@@ -306,12 +338,15 @@ function App() {
     try {
       const qScore = await safeGetItem('highscore_quiz');
       const mScore = await safeGetItem('highscore_math');
+      const gScore = await safeGetItem('highscore_geo');
       setHighScoreQuiz(qScore !== null ? Number(qScore) : 0);
       setHighScoreMath(mScore !== null ? Number(mScore) : 0);
+      setHighScoreGeo(gScore !== null ? Number(gScore) : 0);
     } catch (err) {
       console.error('Failed to load high scores:', err);
       setHighScoreQuiz(0);
       setHighScoreMath(0);
+      setHighScoreGeo(0);
     }
   }, []);
 
@@ -323,9 +358,12 @@ function App() {
     }
   }, [screen, loadHighScores, loadSoundSetting]);
 
-  // CSV 로드 및 파싱 (상식 퀴즈용)
+  // CSV 로드 및 파싱 (상식 퀴즈 및 지리 추론용)
   useEffect(() => {
-    // base 경로 설정에 맞춰 public 경로에서 로딩하도록 구성
+    let quizLoaded = false;
+    let geoLoaded = false;
+
+    // 상식 퀴즈 로드
     fetch('./quiz.csv')
       .then((res) => {
         if (!res.ok) throw new Error('Network response was not ok');
@@ -337,13 +375,38 @@ function App() {
           skipEmptyLines: true,
           complete: (results) => {
             setQuizzes(results.data);
-            setIsLoading(false);
+            quizLoaded = true;
+            if (geoLoaded) setIsLoading(false);
           },
         });
       })
       .catch((err) => {
-        console.error('Fetch CSV Error:', err);
-        setIsLoading(false);
+        console.error('Fetch quiz CSV Error:', err);
+        quizLoaded = true;
+        if (geoLoaded) setIsLoading(false);
+      });
+
+    // 지리 추론 로드
+    fetch('./geo_quiz.csv')
+      .then((res) => {
+        if (!res.ok) throw new Error('Network response was not ok');
+        return res.text();
+      })
+      .then((csvText) => {
+        Papa.parse<GeoQuestion>(csvText, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => {
+            setGeoQuestions(results.data);
+            geoLoaded = true;
+            if (quizLoaded) setIsLoading(false);
+          },
+        });
+      })
+      .catch((err) => {
+        console.error('Fetch geo_quiz CSV Error:', err);
+        geoLoaded = true;
+        if (quizLoaded) setIsLoading(false);
       });
   }, []);
 
@@ -437,6 +500,12 @@ function App() {
           await safeSetItem('highscore_math', String(finalScore));
           setHighScoreMath(finalScore);
         }
+      } else if (activeMode === 'geo') {
+        if (finalScore > highScoreGeo) {
+          isNew = true;
+          await safeSetItem('highscore_geo', String(finalScore));
+          setHighScoreGeo(finalScore);
+        }
       }
     } catch (err) {
       console.error('Failed to save high score to Storage:', err);
@@ -444,11 +513,12 @@ function App() {
 
     setIsNewRecord(isNew);
     setScreen('result');
-  }, [highScoreQuiz, highScoreMath]);
+  }, [highScoreQuiz, highScoreMath, highScoreGeo]);
 
   // 카운트다운 타이머 설정 및 정리 (시작 시 timeLeft에 비례해 작동)
   useEffect(() => {
     if (screen !== 'playing') return;
+    if (mode === 'geo') return; // 지리 추론 모드는 타이머가 없음
 
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
@@ -464,7 +534,7 @@ function App() {
     return () => {
       clearInterval(interval);
     };
-  }, [screen, handleGameEnd]);
+  }, [screen, mode, handleGameEnd]);
 
   // 리워드 광고 "광고 보고 이어하기" 처리
   const handleContinueWithAd = () => {
@@ -628,12 +698,117 @@ function App() {
     setScreen('playing');
   };
 
+  // 지리 추론 시작
+  const startGeoGame = () => {
+    if (geoQuestions.length === 0) return;
+    setScore(0);
+    setIsNewRecord(false);
+    setHasContinued(false);
+
+    // 300문제 중 무작위 10문제 추출
+    const shuffled = shuffleArray(geoQuestions);
+    const session = shuffled.slice(0, 10);
+
+    setGeoSessionQuestions(session);
+    setGeoCurrentIndex(0);
+    setOpenedHintsCount(0);
+    setGeoInput('');
+    setIsCorrectGeo(false);
+    setIsAnswered(false);
+    setShowExplanation(false);
+    setImgError(false);
+    setMode('geo');
+    setScreen('playing');
+  };
+
   // 모드 선택 처리
   const startNewGame = (selectedMode: GameMode) => {
     if (selectedMode === 'quiz') {
       startQuizGame();
-    } else {
+    } else if (selectedMode === 'math') {
       startMathGame();
+    } else if (selectedMode === 'geo') {
+      startGeoGame();
+    }
+  };
+
+  // 주관식 텍스트 가공 함수
+  const cleanString = (str: string) => {
+    return str.replace(/\s+/g, '').toLowerCase().trim();
+  };
+
+  // 주관식 정답 판정 함수
+  const checkGeoAnswer = (input: string, question: GeoQuestion) => {
+    const cleanedInput = cleanString(input);
+    if (!cleanedInput) return false;
+
+    const answers = [
+      question.answer_ko,
+      question.answer_en,
+      ...question.acceptable_answers.split(',')
+    ];
+
+    return answers.some((ans) => cleanString(ans) === cleanedInput);
+  };
+
+  // 힌트 순차 개방 핸들러
+  const handleOpenHint = () => {
+    if (openedHintsCount < 3) {
+      setOpenedHintsCount((prev) => prev + 1);
+    }
+  };
+
+  // 지리 추론 정답 제출 핸들러
+  const handleGeoSubmit = () => {
+    if (isAnswered) return;
+    const currentQuestion = geoSessionQuestions[geoCurrentIndex];
+    if (!currentQuestion) return;
+
+    const isCorrect = checkGeoAnswer(geoInput, currentQuestion);
+    if (isCorrect) {
+      setIsCorrectGeo(true);
+      setIsAnswered(true);
+
+      // 힌트 개수에 따른 점수 반영
+      let points = GEO_SCORE_WRONG;
+      if (openedHintsCount === 0) points = GEO_SCORE_HINT_0;
+      else if (openedHintsCount === 1) points = GEO_SCORE_HINT_1;
+      else if (openedHintsCount === 2) points = GEO_SCORE_HINT_2;
+      else if (openedHintsCount === 3) points = GEO_SCORE_HINT_3;
+
+      setScore((prev) => prev + points);
+      playBeepSound(true);
+      triggerHaptic(true);
+      setShowExplanation(true);
+    } else {
+      playBeepSound(false);
+      triggerHaptic(false);
+      alert('오답입니다! 다시 한 번 생각해보세요.');
+    }
+  };
+
+  // 지리 추론 포기/정답 보기 핸들러
+  const handleGeoGiveUp = () => {
+    if (isAnswered) return;
+    setIsCorrectGeo(false);
+    setIsAnswered(true);
+    playBeepSound(false);
+    triggerHaptic(false);
+    setShowExplanation(true);
+  };
+
+  // 다음 지리 문제 전환 핸들러
+  const handleGeoNext = () => {
+    if (geoCurrentIndex < 9) {
+      setGeoCurrentIndex((prev) => prev + 1);
+      setOpenedHintsCount(0);
+      setGeoInput('');
+      setIsCorrectGeo(false);
+      setIsAnswered(false);
+      setShowExplanation(false);
+      setImgError(false);
+    } else {
+      handleGameEnd();
     }
   };
 
@@ -673,6 +848,8 @@ function App() {
       startQuizGame();
     } else if (mode === 'math') {
       startMathGame();
+    } else if (mode === 'geo') {
+      startGeoGame();
     }
   };
 
@@ -747,10 +924,27 @@ function App() {
               </span>
             </button>
 
-            <button className="mode-card card-math" onClick={() => startNewGame('math')}>
+            <button
+              className="mode-card card-math"
+              onClick={() => startNewGame('math')}
+              disabled={isLoading}
+              style={{ opacity: isLoading ? 0.6 : 1 }}
+            >
               <span className="mode-card-title">⚡ 빠른 계산</span>
               <span className="mode-card-score">
-                최고 점수: {highScoreMath}
+                {isLoading ? '문제 불러오는 중...' : `최고 점수: ${highScoreMath}`}
+              </span>
+            </button>
+
+            <button
+              className="mode-card card-geo"
+              onClick={() => startNewGame('geo')}
+              disabled={isLoading}
+              style={{ opacity: isLoading ? 0.6 : 1 }}
+            >
+              <span className="mode-card-title">🗺️ 지리 추론</span>
+              <span className="mode-card-score">
+                {isLoading ? '문제 불러오는 중...' : `최고 점수: ${highScoreGeo}`}
               </span>
             </button>
           </div>
@@ -767,12 +961,16 @@ function App() {
         <div className="screen-wrapper">
           <div className="game-header">
             <div className="game-header-info">
-              <span className="game-header-label">남은 시간</span>
-              <span className="game-header-value">{timeLeft}</span>
+              <span className="game-header-label">
+                {mode === 'geo' ? '진행도' : '남은 시간'}
+              </span>
+              <span className="game-header-value">
+                {mode === 'geo' ? `${geoCurrentIndex + 1} / 10` : timeLeft}
+              </span>
             </div>
 
             <span className="game-mode-tag">
-              {mode === 'quiz' ? '상식 퀴즈' : '빠른 계산'}
+              {mode === 'quiz' ? '상식 퀴즈' : mode === 'math' ? '빠른 계산' : '지리 추론'}
             </span>
 
             <div className="game-header-info" style={{ alignItems: 'flex-end' }}>
@@ -781,42 +979,141 @@ function App() {
             </div>
           </div>
 
-          {/* 타이머 바 시각 구현 */}
-          <div className="timer-bar-container">
-            <div className="timer-bar" style={{ width: `${(timeLeft / 60) * 100}%` }} />
-          </div>
+          {/* 타이머 바 시각 구현 (지리 모드 아닐때만 노출) */}
+          {mode !== 'geo' && (
+            <div className="timer-bar-container">
+              <div className="timer-bar" style={{ width: `${(timeLeft / 60) * 100}%` }} />
+            </div>
+          )}
 
           <div className="problem-container">
-            <span className="problem-text">{questionText}</span>
+            {mode === 'geo' ? (
+              imgError || !geoSessionQuestions[geoCurrentIndex] ? (
+                <div className="geo-img-fallback-box" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                  <span className="geo-img-fallback-cat" style={{ fontFamily: 'DungGeunMo', color: 'var(--theme-main)', fontSize: '14px' }}>
+                    [{geoSessionQuestions[geoCurrentIndex]?.category}]
+                  </span>
+                  <span className="geo-img-fallback-text" style={{ fontSize: '13px', color: 'var(--retro-text-muted)' }}>
+                    사진을 표시할 수 없습니다
+                  </span>
+                </div>
+              ) : (
+                <img
+                  src={`./${geoSessionQuestions[geoCurrentIndex].image}`}
+                  alt="지리 추론 퀴즈"
+                  className="geo-quiz-image"
+                  onError={() => setImgError(true)}
+                />
+              )
+            ) : (
+              <span className="problem-text">{questionText}</span>
+            )}
           </div>
 
-          <div className="choice-list">
-            {shuffledChoices.map((choice, idx) => {
-              const isSelected = selectedChoice === choice;
-              const correctText = getCorrectAnswerText();
-              const isCorrect = choice === correctText;
+          {mode === 'geo' ? (
+            <>
+              {/* 지리 추론 힌트 슬롯 */}
+              {geoSessionQuestions[geoCurrentIndex] && (
+                <div className="geo-hints-container">
+                  <div className="geo-hint-row">
+                    <span className="geo-hint-label">힌트 1 (구분: {geoSessionQuestions[geoCurrentIndex].category} / 난이도: {geoSessionQuestions[geoCurrentIndex].difficulty}):</span>
+                    <span className="geo-hint-text">
+                      {openedHintsCount >= 1 ? geoSessionQuestions[geoCurrentIndex].hint_1 : '🔒 첫 번째 힌트 (잠김)'}
+                    </span>
+                  </div>
+                  <div className="geo-hint-row">
+                    <span className="geo-hint-label">힌트 2:</span>
+                    <span className="geo-hint-text">
+                      {openedHintsCount >= 2 ? geoSessionQuestions[geoCurrentIndex].hint_2 : '🔒 두 번째 힌트 (잠김)'}
+                    </span>
+                  </div>
+                  <div className="geo-hint-row">
+                    <span className="geo-hint-label">힌트 3:</span>
+                    <span className="geo-hint-text">
+                      {openedHintsCount >= 3 ? geoSessionQuestions[geoCurrentIndex].hint_3 : '🔒 세 번째 힌트 (잠김)'}
+                    </span>
+                  </div>
 
-              let btnClass = 'choice-button';
-              if (isAnswered) {
-                if (isCorrect) {
-                  btnClass += ' correct';
-                } else if (isSelected) {
-                  btnClass += ' incorrect';
+                  {!isAnswered && openedHintsCount < 3 && (
+                    <button className="btn-open-hint" onClick={handleOpenHint}>
+                      💡 힌트 열기 (획득 가능 점수: {openedHintsCount === 0 ? 100 : openedHintsCount === 1 ? 70 : 40} → {openedHintsCount === 0 ? 70 : openedHintsCount === 1 ? 40 : 20}점)
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* 정답 입력 영역 */}
+              {!showExplanation ? (
+                <div className="geo-input-section">
+                  <input
+                    type="text"
+                    className="geo-text-input"
+                    placeholder="도시명 또는 랜드마크 입력"
+                    value={geoInput}
+                    onChange={(e) => setGeoInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleGeoSubmit();
+                    }}
+                  />
+                  <div className="geo-submit-row">
+                    <button className="btn-geo-submit" onClick={handleGeoSubmit}>
+                      정답 제출
+                    </button>
+                    <button className="btn-geo-giveup" onClick={handleGeoGiveUp}>
+                      포기 / 정답 보기
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                geoSessionQuestions[geoCurrentIndex] && (
+                  <div className="geo-explanation-section">
+                    <div className="geo-answer-result">
+                      {isCorrectGeo ? (
+                        <span className="result-correct-label">🎉 정답입니다! (+{openedHintsCount === 0 ? 100 : openedHintsCount === 1 ? 70 : openedHintsCount === 2 ? 40 : 20}점)</span>
+                      ) : (
+                        <span className="result-incorrect-label">😢 오답 처리되었습니다. (정답: {geoSessionQuestions[geoCurrentIndex].answer_ko})</span>
+                      )}
+                    </div>
+                    <div className="geo-explanation-box">
+                      <strong>정답 해설:</strong> {geoSessionQuestions[geoCurrentIndex].explanation}
+                    </div>
+                    <button className="btn-geo-next" onClick={handleGeoNext}>
+                      {geoCurrentIndex < 9 ? '다음 문제로 ➡️' : '결과 보기 🏆'}
+                    </button>
+                  </div>
+                )
+              )}
+            </>
+          ) : (
+            /* 기존 사지선다 선택지 리스트 */
+            <div className="choice-list">
+              {shuffledChoices.map((choice, idx) => {
+                const isSelected = selectedChoice === choice;
+                const correctText = getCorrectAnswerText();
+                const isCorrect = choice === correctText;
+
+                let btnClass = 'choice-button';
+                if (isAnswered) {
+                  if (isCorrect) {
+                    btnClass += ' correct';
+                  } else if (isSelected) {
+                    btnClass += ' incorrect';
+                  }
                 }
-              }
 
-              return (
-                <button
-                  key={idx}
-                  className={btnClass}
-                  disabled={isAnswered}
-                  onClick={() => handleChoiceClick(choice)}
-                >
-                  {choice}
-                </button>
-              );
-            })}
-          </div>
+                return (
+                  <button
+                    key={idx}
+                    className={btnClass}
+                    disabled={isAnswered}
+                    onClick={() => handleChoiceClick(choice)}
+                  >
+                    {choice}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           <div className="dev-action-bar">
             <button className="end-game-btn" onClick={endGame}>
@@ -843,14 +1140,16 @@ function App() {
 
             <div className="action-buttons">
               {/* 리워드 광고 이어하기 버튼 */}
-              <button
-                className="btn-rewarded"
-                onClick={handleContinueWithAd}
-                disabled={hasContinued || isAdLoading}
-                style={{ marginBottom: '8px' }}
-              >
-                {isAdLoading ? '광고 불러오는 중...' : hasContinued ? '이어하기 완료' : '📺 광고 보고 30초 이어하기'}
-              </button>
+              {mode !== 'geo' && (
+                <button
+                  className="btn-rewarded"
+                  onClick={handleContinueWithAd}
+                  disabled={hasContinued || isAdLoading}
+                  style={{ marginBottom: '8px' }}
+                >
+                  {isAdLoading ? '광고 불러오는 중...' : hasContinued ? '이어하기 완료' : '📺 광고 보고 30초 이어하기'}
+                </button>
+              )}
 
               <button className="btn-primary" onClick={handleRetry}>
                 다시 하기
