@@ -45,7 +45,7 @@ const AD_ID_REWARDED = 'ait-ad-test-rewarded-id';
 const GEO_SCORE_HINT_0 = 100;
 const GEO_SCORE_HINT_1 = 70;
 const GEO_SCORE_HINT_2 = 40;
-const GEO_SCORE_HINT_3 = 20;
+// const GEO_SCORE_HINT_3 = 20; // 첫 힌트가 기본 제공됨에 따라 최대 2회 추가 개방이므로 미사용
 const GEO_SCORE_WRONG = 0;
 
 // 피셔-예이츠(Fisher-Yates) 셔플 알고리즘
@@ -711,7 +711,7 @@ function App() {
 
     setGeoSessionQuestions(session);
     setGeoCurrentIndex(0);
-    setOpenedHintsCount(0);
+    setOpenedHintsCount(1); // 첫 번째 힌트는 처음부터 제시
     setGeoInput('');
     setIsCorrectGeo(false);
     setIsAnswered(false);
@@ -769,12 +769,11 @@ function App() {
       setIsCorrectGeo(true);
       setIsAnswered(true);
 
-      // 힌트 개수에 따른 점수 반영
+      // 힌트 개수에 따른 점수 반영 (첫 힌트는 기본제공으로 1인 상태가 추가 힌트 미사용(0개 추가)을 의미)
       let points = GEO_SCORE_WRONG;
-      if (openedHintsCount === 0) points = GEO_SCORE_HINT_0;
-      else if (openedHintsCount === 1) points = GEO_SCORE_HINT_1;
-      else if (openedHintsCount === 2) points = GEO_SCORE_HINT_2;
-      else if (openedHintsCount === 3) points = GEO_SCORE_HINT_3;
+      if (openedHintsCount === 1) points = GEO_SCORE_HINT_0;      // 100점
+      else if (openedHintsCount === 2) points = GEO_SCORE_HINT_1; // 70점
+      else if (openedHintsCount === 3) points = GEO_SCORE_HINT_2; // 40점
 
       setScore((prev) => prev + points);
       playBeepSound(true);
@@ -801,7 +800,7 @@ function App() {
   const handleGeoNext = () => {
     if (geoCurrentIndex < 9) {
       setGeoCurrentIndex((prev) => prev + 1);
-      setOpenedHintsCount(0);
+      setOpenedHintsCount(1); // 첫 번째 힌트는 항상 시작부터 노출
       setGeoInput('');
       setIsCorrectGeo(false);
       setIsAnswered(false);
@@ -1036,7 +1035,7 @@ function App() {
 
                   {!isAnswered && openedHintsCount < 3 && (
                     <button className="btn-open-hint" onClick={handleOpenHint}>
-                      💡 힌트 열기 (획득 가능 점수: {openedHintsCount === 0 ? 100 : openedHintsCount === 1 ? 70 : 40} → {openedHintsCount === 0 ? 70 : openedHintsCount === 1 ? 40 : 20}점)
+                      💡 힌트 {openedHintsCount + 1} 열기 (획득 점수: {openedHintsCount === 1 ? '100 ➡️ 70점' : '70 ➡️ 40점'})
                     </button>
                   )}
                 </div>
@@ -1069,7 +1068,7 @@ function App() {
                   <div className="geo-explanation-section">
                     <div className="geo-answer-result">
                       {isCorrectGeo ? (
-                        <span className="result-correct-label">🎉 정답입니다! (+{openedHintsCount === 0 ? 100 : openedHintsCount === 1 ? 70 : openedHintsCount === 2 ? 40 : 20}점)</span>
+                        <span className="result-correct-label">🎉 정답입니다! (+{openedHintsCount === 1 ? 100 : openedHintsCount === 2 ? 70 : 40}점)</span>
                       ) : (
                         <span className="result-incorrect-label">😢 오답 처리되었습니다. (정답: {geoSessionQuestions[geoCurrentIndex].answer_ko})</span>
                       )}
