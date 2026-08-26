@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Papa from 'papaparse';
-import { Storage, Screen, SafeArea, Device, TossAds, loadFullScreenAd, showFullScreenAd } from '@apps-in-toss/web-framework';
+import { Storage, Screen, SafeArea, Device, TossAds, Game, loadFullScreenAd, showFullScreenAd } from '@apps-in-toss/web-framework';
 import './App.css';
 import GameRatingInfo from './components/GameRatingInfo';
 
@@ -511,6 +511,16 @@ function App() {
       console.error('Failed to save high score to Storage:', err);
     }
 
+    // 지리 추론 모드인 경우 토스게임센터 리더보드에 점수 등록
+    if (activeMode === 'geo') {
+      try {
+        console.log(`Submitting Geo score to Leaderboard: ${finalScore}`);
+        await Game.setLeaderboardScore({ score: String(finalScore) });
+      } catch (leaderboardErr) {
+        console.warn('Failed to submit score to game center leaderboard:', leaderboardErr);
+      }
+    }
+
     setIsNewRecord(isNew);
     setScreen('result');
   }, [highScoreQuiz, highScoreMath, highScoreGeo]);
@@ -842,6 +852,15 @@ function App() {
     handleGameEnd();
   };
 
+  const handleOpenLeaderboard = async () => {
+    try {
+      await Game.openLeaderboard();
+    } catch (err) {
+      console.warn('Failed to open game center leaderboard:', err);
+      alert('순위표를 열 수 없습니다. 토스 앱 내에서 시도해 주세요.');
+    }
+  };
+
   const handleRetry = () => {
     if (mode === 'quiz') {
       startQuizGame();
@@ -943,7 +962,7 @@ function App() {
             >
               <span className="mode-card-title">🗺️ 지리 추론</span>
               <span className="mode-card-score">
-                {isLoading ? '문제 불러오는 중...' : `최고 점수: ${highScoreGeo}`}
+                {isLoading ? '문제 불러오는 중...' : `최고 점수: ${highScoreGeo} (🏆 글로벌 순위 반영)`}
               </span>
             </button>
           </div>
@@ -1135,6 +1154,11 @@ function App() {
               {isNewRecord && (
                 <div className="new-record-badge">🎉 최고 기록 갱신!</div>
               )}
+              {mode === 'geo' && (
+                <div className="geo-ranking-notice">
+                  🏆 이 모드는 글로벌 순위에 반영됩니다.
+                </div>
+              )}
             </div>
 
             <div className="action-buttons">
@@ -1153,6 +1177,11 @@ function App() {
               <button className="btn-primary" onClick={handleRetry}>
                 다시 하기
               </button>
+              {mode === 'geo' && (
+                <button className="btn-primary btn-leaderboard" onClick={handleOpenLeaderboard} style={{ marginBottom: '8px' }}>
+                  🏆 순위 보기
+                </button>
+              )}
               <button className="btn-secondary" onClick={handleGoToSelect}>
                 모드 선택으로
               </button>
