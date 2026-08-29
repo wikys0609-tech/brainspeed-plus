@@ -370,7 +370,8 @@ function App() {
         return res.text();
       })
       .then((csvText) => {
-        Papa.parse<QuizItem>(csvText, {
+        const cleanText = csvText.replace(/^\uFEFF/, '');
+        Papa.parse<QuizItem>(cleanText, {
           header: true,
           skipEmptyLines: true,
           complete: (results) => {
@@ -393,7 +394,8 @@ function App() {
         return res.text();
       })
       .then((csvText) => {
-        Papa.parse<GeoQuestion>(csvText, {
+        const cleanText = csvText.replace(/^\uFEFF/, '');
+        Papa.parse<GeoQuestion>(cleanText, {
           header: true,
           skipEmptyLines: true,
           complete: (results) => {
